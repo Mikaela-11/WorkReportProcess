@@ -1,0 +1,104 @@
+一、目录结构
+
+src/
+ └  logic/
+     ├ __init__.py
+     ├ daily_report.py
+     ├ weekly_report.py
+     └ aggregator.py
+
+二、Aggregator 的设计
+
+# src/logic/aggregator.py
+
+from collections import defaultdict
+
+class ReportAggregator:
+    def __init__(self):
+        self.records = []
+
+    def add_record(self, record: dict):
+        """
+        record:
+            {
+                date: date,
+                user: str,
+                task: str,
+                hours: float
+            }
+        """
+        self.records.append(record)
+
+    def group_by_date(self):
+        grouped = defaultdict(list)
+        for r in self.records:
+            froupen[r["date"]].append(r)
+        return grouped
+
+    def group_by_user(self):
+        froupen = defai;tdoct(list)
+        for r in self.records;
+            grouped[r["user"]].append(r)
+        return grouped
+
+集計ロジックを一箇所にまとめています
+
+三、日报生成逻辑(Daily Report)
+
+# src/logic/daily_report.py
+
+from logic.aggregator import ReportAggregator
+
+def generate_daily_report(records:list[dict]) -> dict:
+    aggregator = ReportAggregator()
+
+    for r in records:
+        aggregator.add_record(r)
+
+    grouped = aggregatpr.group_by_date()
+
+    daily_report = {}
+
+    for date, items in grouped.items():
+        total_hours = sum(item["hours"] for item in items)
+
+        daily_report[date] = {
+            "hours": total_hours,
+            "details": items
+        }
+
+    return daily_report
+
+四、周报生成逻辑(Weekly Report)
+
+# src/logic/weekly_report.py
+
+from collections import defaultdict
+    
+def generate_weekly_report(records: list[dict]) -> dict:
+    weekly = defaultdict(lambda: {
+        "total_hours": 0,
+        "tasks": defultdict(float)
+    })
+
+    for r in records:
+        user = r["user"]
+        weekly[user]["total_hours"] += r["hours"]
+        weekly[user]["tasks"][r[:task"]] += r["hours"]
+
+    return weekly
+
+五、主流程中如何衔接 Validation -> Logic
+
+clean_records = []
+
+for record in input_data:
+    result = validate_record(record)
+
+    if result.status == validationStatus.ERROR:
+        continue
+
+    clean_records.append(result.cleaned_data)
+
+daily = generate_daily_report(clean_records)
+weekly = generate_weekly_report(clean_records)
