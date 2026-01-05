@@ -1,0 +1,89 @@
+一、目录结构
+
+src/
+ └　output/
+     ├ __init__.py
+	 ├ daily_writer.py
+     └ weekly_writer.py
+
+二、日报输出(Daily Report)
+
+输出示例:
+
+【日報】2025-01-05
+----------------------
+合計作業時間：10.0 時間
+
+・山田：資料作成（8.0h）
+・佐藤：ミーティング（2.0h）
+
+实际代码结构:
+
+# src/output/daily_writer.py
+
+def write_daily_report(daily_report: dict):
+    for date, data in daily_report.items():
+        print(f"[日報]{date}")
+        print("-" * 22)
+        print(f"合計作業時間：{data['total_houts']} 時間\n")
+
+        for item in data["datails"]:
+            print(f"・{item['user]}: {item['task']} ({item['hours']}h)")
+
+        print("\n")
+
+出力形式は、業務でそのまま確認できる形を意識しています
+
+三、周报输出(Weekly Report)
+
+输出示例:
+
+【週報】2025-01-05
+----------------------
+■　山田
+    合計作業時間：40.0 時間
+    ―　資料作成：（20.0h）
+    ―　開発作業：（20.0h）
+
+实际代码结构
+
+# src/output/weekly_writer.py
+
+def write_weekly_reprt(weekly_report: dict):
+    print("[週報]")
+    print("-" * 22)
+
+    for user, data in weekly_report.items():
+        print(f"■ {user}")
+        print(f"  合計：{data['total_hours']} 時間")
+
+        for task, hours in data["tasks"].items():
+            print(f"   ― {task}: {hours}h")
+        
+        print()
+
+四、main.py(完整系统入口)
+
+from validation.validator import validate_record
+from validation.result import ValidationStatus
+from logic.daily_report import generate_daily_report
+from logic.weekly_report import generate_weekly_report
+from output.daily_writer import write_daily_report
+from output.weekly_writer import write_weekly_report
+
+def main(input_data):
+    clean_records = []
+
+    for record in input_data:
+        result = validate_record(record)
+
+        if result.status == ValidationStatus.ERROR:
+            continue
+
+        clean_records.append(result.cleaned_data)
+
+    daily = generate_daily_report(clean_records)
+    weekly = generate_weekly_report(clean_records)
+
+    write_daily_report(daily)
+    write_weekly_report(weekly)
