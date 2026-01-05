@@ -1,0 +1,147 @@
+一、目录结构
+
+src/
+ └  validation/
+     ├ __init__.py
+     ├ validator.py
+	 ├ checks_required.py
+	 ├ checks_format.py
+	 ├ checks_business.py
+     └ result.py
+
+二、ValidationResult(结果对象)
+
+# src/validation/result.py
+
+from enum import Enum, auto
+
+class ValidationStatus(Enum):
+	OK = auto()
+	WARNING = auto()
+	ERROR = auto()
+
+class ValidationResult:
+	def __init(self):
+		self.status = ValidationStatus.OK
+		self.cleaned_data = {}
+		self.errors = []
+		self.warnings = []
+
+		def add_error(self, message: str):
+		self.errors.append(message)
+		self.status = ValidationStatus.ERROR
+
+	def add_warning(self, message: str):
+		if self.status != ValidationStatus.ERROR:
+			self.status = ValidationStatus.WARNING
+		self.warnings.append(message)
+
+三、必填项检查（存在性チェック）
+
+# src/validation/checks_required.py
+
+REQUIRED_FIELDS = ["date", "user", "task", "hours"]
+
+def check_required_fields(record: dict, result):
+	for field in REQUIRED_FIELDS:
+		value = record.get(field)
+		if value is None or str(value).strip() == "":
+			result.add_error(f"{field} is required but missing")
+
+四、格式检查 + 正规化（フォーマットチェック）
+
+# src/validation/check_format.py
+
+from datetime import datetime
+
+def normalize_date(value: str):
+	for fmt in ("%Y-%m-%d", "%Y-%m-%d"):
+		try:
+			return datetime.strptime(value.strip(), fmt).date()
+		except ValueError:
+			continue
+	return None
+	
+def normalize_hours(value: str):
+	try:
+		return float(value)
+	except (ValueError, TypeError):
+		return None
+
+def check_format(record: dict, result):
+	# date
+	date = nrmalize_date(record.get("date", ""))
+	if date is None:
+		result.add_error("Invalid date format")
+	else:
+		result.cleaned_data["date"] = date
+
+	# hours
+	hours = normalizee_hours(record.get("hours"))
+	if hours is None:
+		result.add_error("Hours must be numeric")
+	else:
+		result.cleaned_data["hours"] = hours
+
+	# user / task (简单正规化)
+	result.cleaned_data["user"] = str(record.get("user", "")).strip()
+	result.cleaned_data["task"] = str(record.get("task", "")).strip()
+
+フォーマットの違いは、可能な限り吸収するようにしています
+
+
+五、业务规则检查（業務ルールチェック）
+
+# src/validation/checks_business.py
+
+def check_business_rules(data: dict, result):
+	hours = data.get("hours", 0)
+
+	if hours < 0:
+		result.add_error("Negative hours are not allowed")
+
+	if hours > 24:
+		result.add_warning("Working hours exceed 24")
+
+	if not data.get("task"):
+		result.add_warning("Task description is empty")
+
+六、总控 Validator (入口)
+
+# src/validation/validator.py
+
+from validation.result import ValidationResult, ValidationStatus
+from validation.checks_requires import check_required_fields
+from validation.checks_format import check_format
+form validation.checks_business import check_business_rules
+
+def validate_record(record: dict) -> validationResult:
+	result = ValidationResult()
+
+	check_required_fields(record, result)
+
+	if result.status == ValidationStasus.ERROR:
+		retutn result
+
+	check_format(record, result)
+
+	if result.status == ValidationStatus.ERROR:
+		return result
+
+	check_business_rules(result.cleaned_data, result)
+
+	return result
+
+七、在主流程中如何使用(示例)
+
+for record in input_data:
+	result = validate_record(record)
+
+	if result.status == ValidationStatus.ERROR:
+		logger,error(result.errors)
+		continue
+
+	if result.status == ValidationStatus.WARNING:
+		logger.warning(result.warnings)
+
+	process_record(result.cleaned_data)
